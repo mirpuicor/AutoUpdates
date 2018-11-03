@@ -10,9 +10,11 @@ import { SendDialogService } from '../../../services/send-dialog.service';
 import { MdDialog } from '@angular/material';
 import { LoadingDialogComponent } from '../../dialogs/loading-dialog.component';
 import { NetworkDialogComponent } from "../../dialogs/network-dialog.component";
+import { DialogService } from '../../../services/dialog.service';
+import { CardMessageDialogComponent } from './card-message-dialog.component';
 
 import { Router, NavigationEnd } from '@angular/router';
-import { ERROR_LOGGER } from '../../../../../node_modules/@angular/core/src/errors';
+import { ERROR_LOGGER } from '@angular/core/src/errors';
 import BigNumber from 'bignumber.js';
 const shell = require('electron').shell;
 
@@ -64,7 +66,7 @@ export class CreditCardPage implements OnInit {
 
     //Tx detail info
     public selfAccount; //eth account
-    public fiatReceiver; //Card ID
+    protected fiatReceiver; //Card ID
     public fiatAmount;
     public tx_id:number;
     public ethAddr; //chipchap eth account
@@ -72,7 +74,7 @@ export class CreditCardPage implements OnInit {
     public amountEth;
     public timeLeft;
     public scale;
-   
+    public testingView;
 
     public loadingD;
 
@@ -85,6 +87,10 @@ export class CreditCardPage implements OnInit {
     public txtResponseOut;
     public txtResponseStatus;
     
+    protected splitFiatReceiver1;
+    protected splitFiatReceiver2;
+    protected splitFiatReceiver3;
+    protected splitFiatReceiver4;
 
     //public from; eth account?
     
@@ -99,13 +105,13 @@ export class CreditCardPage implements OnInit {
     }
     dialogRef;
 
-    constructor(private dialog: MdDialog, private http: Http, public _web3: Web3,private _account: AccountService, private sendDialogService: SendDialogService,  private router : Router) {
+    constructor(private dialog: MdDialog, private http: Http, public _web3: Web3,private _account: AccountService, private sendDialogService: SendDialogService,  private router : Router, private _dialog: DialogService) {
    
           if(localStorage.getItem('pendingTx')){
             let x = localStorage.getItem('pendingTx'); 
             this.tx_id = JSON.parse(x);
           }
-        
+       
     }
     async backPendingTx(){
         this.pendingTx = null;
@@ -123,7 +129,7 @@ export class CreditCardPage implements OnInit {
                     width: '660px',
                     height: '200px',
                     disableClose: false
-                  });
+                });
                   this.dialogRef.afterClosed().subscribe(async result=>{
                     this.router.navigate(["/wallet/global"]);
                 })
@@ -177,20 +183,31 @@ export class CreditCardPage implements OnInit {
     }
 
     setTxInfo(tx, addr, q, t, to, s, scl){
+        console.log("entras aqui????");
+        
         this.tx_id = tx;
         this.ethAddr = addr;
         this.amountWei = q;
         this.timeLeft = t;
         this.fiatReceiver = to;
+
+        let x = to.toString();
+   
+        this.splitFiatReceiver1 = x.substring(0, 4);
+        this.splitFiatReceiver2 = x.substring(4, 8);
+        this.splitFiatReceiver3 = x.substring(8, 12);
+        this.splitFiatReceiver4 = x.substring(12, 16);
+
         this.selfAccount = this._account.account.address;
         
         this.fiatAmount = s;
 
+        this.serviceStatus = true;
         this.inputData = null;
         this.detailTx = true;
         this.confirmTx = true;
         this.scale = scl;
-        
+        this.testingView = 'show';
         
         this.amountEth = this.amountWei/Math.pow(10,this.scale);
         
@@ -208,13 +225,13 @@ export class CreditCardPage implements OnInit {
         
         if(this.serviceStatus){
             if(val < 10 || val == null){
-                this.inputAmountErr = "Amount must be greater than 10";
+                this.inputAmountErr = "Amount must be greater than 10€";
             } else{
                 this.inputAmountErr = null;
                 document.getElementById("Amount").classList.remove("error");
             }
-            if(where == null || where.length != 16){
-                this.inputCardIdErr = "Spark ID length must be equal to 16";
+            if(where == null || where.length != 12){
+                this.inputCardIdErr = "Spark ID length must be equal to 12";
             } else{
                 this.inputCardIdErr = null;
                 document.getElementById("CardId").classList.remove("error");
@@ -232,7 +249,7 @@ export class CreditCardPage implements OnInit {
                 let amountX = this.inputAmount*100;
                 
                 let userData = {"amount":amountX,"card_id":this.inputCardId};
-
+                
                 return new Promise((resolve, reject) => {
                     let headers = new Headers();
                     headers.append('Content-Type', 'application/json');
@@ -248,6 +265,7 @@ export class CreditCardPage implements OnInit {
                         this.setTxInfo(txId,payIn.address, payIn.amount, payIn.expires_in, payOut.card_id, payOut.amount, payIn.scale);
                                         
                     }, err =>{
+                        console.log("response error", err);
                         
                         reject(err);
                         this.loadingD.close();
@@ -278,6 +296,7 @@ export class CreditCardPage implements OnInit {
             
             this.http.get(this.url +  path,  {headers: headers}).subscribe(res =>{
                 resolve(res.json());
+                console.log("response del status",res);
                 
                 let response = res.json();
 
@@ -378,31 +397,44 @@ export class CreditCardPage implements OnInit {
         let gasPrice = await this._web3.getGasPrice();
         
         let amountBN = new BigNumber(this._web3.web3.toWei(amount,"ether"));
-        let tx =  new RawTx(this._account,receiverAddr,amountBN,22000, gasPrice, this._web3.network, "");
-        //await this._rawtx.createRaw(receiverAddr, amount);
-        this.sendDialogService.openConfirmSend(tx.tx, receiverAddr, tx.amount, tx.gas, tx.cost, "send");
-
-        localStorage.setItem("pendingTx", JSON.stringify(this.tx_id));
-        this.pendingTx = true;
-        this.serviceStatus = null;
         
-        this.interval = setInterval(() =>{
-            this.chipchapSwiftResponse().then(
-              result => {
+        //await this._rawtx.createRaw(receiverAddr, amount);
+        let dialogRef = this._dialog.openGasDialog(await gasLimit, 1);
+        dialogRef.afterClosed().subscribe(async gasResult=>{
+            console.log("gasResult",gasResult);
+            /**/
+            let res = JSON.parse(gasResult)
+            let tx =  new RawTx(this._account,receiverAddr,amountBN, res.gasLimit, res.gasPrice, this._web3.network, "");
 
-                this.chipchapSwiftResponse();
- 
-                
-                count++;
-                    if(this.checkResponseIn == "received"){
-                        this.setSuccess();
-                        clearInterval(this.interval);
-                        this.router.navigate(["/wallet/global"]);
-                    }
-                }, err => {},
-            );
-          }, 1000);
-          
+            await tx.setTxNonce(this._account);
+            
+            let sendEthDialog = this.sendDialogService.openConfirmSend(tx.tx, receiverAddr, tx.amount, tx.gas, tx.cost, "send");
+            sendEthDialog.afterClosed().subscribe(result=>{
+                let x;
+                if(typeof(result)!= 'undefined'){
+                    x = JSON.parse(result);
+                }
+                if(typeof(result) == 'undefined'){
+                    localStorage.setItem("pendingTx", JSON.stringify(this.tx_id));
+                    this.pendingTx = true;
+                    this.serviceStatus = null;
+                    
+                    this.interval = setInterval(() =>{
+                        this.chipchapSwiftResponse().then(
+                        result => {
+                            this.chipchapSwiftResponse();                
+                            count++;
+                                if(this.checkResponseIn == "received"){
+                                    this.setSuccess();
+                                    clearInterval(this.interval);
+                                    this.router.navigate(["/wallet/global"]);
+                                }
+                            }, err => {},
+                        );
+                    }, 1000);
+                }
+            })
+        })          
       }
 
       checkAddress(receiverAddr): boolean {
@@ -446,5 +478,14 @@ export class CreditCardPage implements OnInit {
           this.orderCard = null;
           this.inputData = true;
           
+      }
+
+      openInfo(){
+        
+        this.dialogRef = this.dialog.open(CardMessageDialogComponent, {
+            width: '660px',
+            height: '200px',
+            disableClose: false
+        });
       }
 }

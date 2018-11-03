@@ -11,6 +11,9 @@ import { Web3 } from '../../../services/web3.service';
 
 import BigNumber from 'bignumber.js/bignumber';
 import { RawTx } from '../../../models/rawtx';
+import { LSCXMarketService } from '../../../services/LSCX-market.service';
+import { ContractStorageService } from '../../../services/contractStorage.service';
+import { CustomContractService } from '../../../services/custom-contract.service';
 
 
 @Component({
@@ -33,11 +36,15 @@ export class ShowContract implements OnInit{
   protected owner: string;
   protected response: any = null;
   protected function;
+  protected goHover=false;
+  protected addMarket = false;
+  protected isInMarket = false;
+  protected isERC20 = true;
 
-  constructor(public _LSCXcontract: LSCXContractService,protected _forms: FormsService, protected sendDialogService : SendDialogService, protected _account: AccountService, protected _dialog: DialogService, protected router : Router, protected _web3: Web3) {
+  constructor(public _LSCXcontract: LSCXContractService, public _contractStorage: ContractStorageService, protected _forms: FormsService, protected sendDialogService : SendDialogService, protected _account: AccountService, protected _dialog: DialogService, protected router : Router, protected _web3: Web3, private _LSCXmarket: LSCXMarketService, private _customContract: CustomContractService ) {
     this.functionForm = new FormGroup({
       functionCtrl: new FormControl(null,Validators.required),
-    })
+    });
   }
 
   ngOnInit(){
@@ -46,6 +53,17 @@ export class ShowContract implements OnInit{
         this.owner=info[1]
       }
     })
+    if(this._LSCXmarket.marketState.tikers.find(x=> x.addr.toLowerCase() == this.contractInfo.address.toLowerCase()) !=null 
+          || this._LSCXmarket.config.tokens.find(x=> x.addr.toLowerCase() == this.contractInfo.address.toLowerCase()) !=null){
+      this.isInMarket = true;
+    }else{
+      this.addMarket = true;
+    }
+    if(this.contractType == "custom"){
+      this.isERC20 = this._customContract.checkERC20();
+      console.log(this.isERC20, this._customContract.checkERC20());
+    }
+    
   }
 
   getControl(controlName: string): AbstractControl{
@@ -154,6 +172,26 @@ export class ShowContract implements OnInit{
 
   goBack(){
     this.back.emit(true);
+  }
+
+  addToMarket() {
+    if(this.contractType=="custom") {
+      console.log("more info",this.moreInfo, this.contractInfo)
+      let address = this.contractInfo.address;
+      let symbol = this.moreInfo.find(x=>x[0]=="symbol");
+      let decimals = this.moreInfo.find(x=>x[0]=="decimals");
+      let contractInfo = {
+        address: address,
+        symbol : symbol[1],
+        decimals: parseInt(decimals[1].toString())
+      }
+      console.log(contractInfo)
+      this._contractStorage.openTikerDialog(contractInfo, false);
+    } else {
+      console.log(this.contractInfo)
+      this._contractStorage.openTikerDialog(this.contractInfo, false);
+    }
+    
   }
 
 }

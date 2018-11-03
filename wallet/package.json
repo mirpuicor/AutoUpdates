@@ -1,13 +1,13 @@
 {
     "name": "lescovex",
-    "version": "1.0.2",
-    "description": "Lescovex media explorer and wallet",
+    "version": "1.0.6",
+    "description": "Lescovex decentralized exchange, wallet and contract issuer",
     "main": "main.js",
     "author": "Lescovex",
-    "license": "ISC",
+    "license": "Creative Commons Non Derivates",
     "repository": {
         "type": "git",
-        "url": "https://github.com/mirpuicor/AutoUpdates.git"
+        "url": "https://github.com/Lescovex/LSCX.git"
     },
     "scripts": {
         "start": "webpack-dev-server --inline --progress --port 8080",
@@ -16,7 +16,7 @@
         "electron:w": "npm run watch && electron .",
         "electron": "npm run build && electron .",
         "postinstall": "electron-builder install-app-deps",
-        "dist": "electron-builder --publish always",
+        "dist": "electron-builder",
         "release": "build",
         "publish": "build -p always"
     },
@@ -109,17 +109,24 @@
         "appId": "Lescovex",
         "mac": {
             "target": "dmg",
-            "icon": "./lescovex.png"
+            "icon": "./lescovex.png",
+            "publish": {
+                "provider": "github",
+                "owner": "Lescovex",
+                "releaseType": "draft",
+                "publishAutoUpdate": "true",
+                "repo": "LSCX"
+            }
         },
         "win": {
             "icon": "./lescovex.ico",
             "target": "nsis",
             "publish": {
                 "provider": "github",
-                "owner": "mirpuicor",
+                "owner": "Lescovex",
                 "releaseType": "draft",
                 "publishAutoUpdate": "true",
-                "repo": "AutoUpdates"
+                "repo": "LSCX"
             }
         },
         "linux": {
@@ -127,10 +134,10 @@
             "icon": "./lescovex.png",
             "publish": {
                 "provider": "github",
-                "owner": "mirpuicor",
+                "owner": "Lescovex",
                 "releaseType": "draft",
                 "publishAutoUpdate": "true",
-                "repo": "AutoUpdates"
+                "repo": "LSCX"
             }
         },
         "nsis": {

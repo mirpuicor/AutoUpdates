@@ -61,6 +61,8 @@ import { AddAccountDialogComponent } from './components/navComponent/addAccount-
 import { NewAccountDialogComponent } from './components/navComponent/newAccount-dialog.component';
 import { ImportAccountDialogComponent } from './components/navComponent/importAccount-dialog.component';
 import { SendDialogComponent } from './components/dialogs/send-dialog.component';
+import { SendOrderDialogComponent } from './components/dialogs/send-order-dialog.component';
+import { SendMarketDialogComponent } from './components/dialogs/send-market-dialog.component';
 import { NetworkDialogComponent } from "./components/dialogs/network-dialog.component";
 import { DeleteComponent } from './components/wallet/wsettings/confirm-delete.component';
 import { JSONDialogComponent } from './components/wallet/wsettings/json-dialog.component';
@@ -75,6 +77,8 @@ import { ResendTxDialogComponent } from './components/dialogs/resendTx-dialog.co
 import { ContractDialogComponent } from './components/contracts/add/contract-dialog.component';
 import { WithdrawTxDialog } from './components/holders/general/withdrawTx.component';
 import { WithdrawDialog } from './components/holders/general/withdraw-dialog.component';
+import { TikerDialogComponent } from './components/dialogs/tiker-dialog.component';
+import { CardMessageDialogComponent } from "./components/wallet/creditCard/card-message-dialog.component";
 
 /*Servicies*/
 import { WalletService } from './services/wallet.service';
@@ -88,7 +92,8 @@ import { LSCXContractService } from './services/LSCX-contract.service';
 import { FormsService } from './services/forms.service'
 import { ContractStorageService } from './services/contractStorage.service'
 import { EtherscanService } from './services/etherscan.service';
-import { MarketService } from './services/market.service';
+import { LSCXMarketService } from './services/LSCX-market.service';
+import { LSCXMarketStorageService } from './services/LSCX-marketStorage.service';
 import { CustomContractService } from './services/custom-contract.service';
 
 /*Pipes*/
@@ -124,12 +129,15 @@ import { InsuficientFundsDirective } from './validators/funds-validator.directiv
     NewAccountDialogComponent,
     ImportAccountDialogComponent,
     SendDialogComponent,
+    SendOrderDialogComponent,
+    SendMarketDialogComponent,
     DeleteComponent,
     ErrorDialogComponent,
     LoadingDialogComponent,
     JSONDialogComponent,
     PrivateKeyDialogComponent,
     NetworkDialogComponent,
+    CardMessageDialogComponent,
     ListComponent,
     PaginatorComponent,
     TokensComponent,
@@ -162,7 +170,8 @@ import { InsuficientFundsDirective } from './validators/funds-validator.directiv
     HoldersComponent,
     HoldersGeneralPage,
     WithdrawTxDialog,
-    WithdrawDialog
+    WithdrawDialog,
+    TikerDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -186,6 +195,8 @@ import { InsuficientFundsDirective } from './validators/funds-validator.directiv
     NewAccountDialogComponent,
     ImportAccountDialogComponent,
     SendDialogComponent,
+    SendOrderDialogComponent,
+    SendMarketDialogComponent,
     DeleteComponent,
     ErrorDialogComponent,
     LoadingDialogComponent,
@@ -199,7 +210,9 @@ import { InsuficientFundsDirective } from './validators/funds-validator.directiv
     ResendTxDialogComponent,
     WithdrawTxDialog,
     WithdrawDialog,
-    NetworkDialogComponent
+    NetworkDialogComponent,
+    TikerDialogComponent,
+    CardMessageDialogComponent
   ],
   providers: [
     WalletService,
@@ -213,7 +226,8 @@ import { InsuficientFundsDirective } from './validators/funds-validator.directiv
     FormsService,
     ContractStorageService,
     EtherscanService,
-    MarketService,
+    LSCXMarketService,
+    LSCXMarketStorageService,
     CustomContractService
   ],
   schemas: [ CUSTOM_ELEMENTS_SCHEMA ]

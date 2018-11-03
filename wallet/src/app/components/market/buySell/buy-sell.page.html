@@ -1,14 +1,30 @@
-<div class="dist clear">
-    <button [ngClass]="(action == 'buy') ? 'btn-solid':'btn-inverse'" (click)="activeButton('buy')">Buy order</button>
-    <button class="extra" [ngClass]="(action == 'sell') ? 'btn-solid':'btn-inverse'" (click)="activeButton('sell')">Sell order</button>
+<div class="dist">
+    <div class="half left">
+        <button [ngClass]="(action == 'buy') ? 'btn-solid':'btn-inverse'" (click)="activeButton('buy')">Buy order</button>
+        <button class="extra" [ngClass]="(action == 'sell') ? 'btn-solid':'btn-inverse'" (click)="activeButton('sell')">Sell order</button>
+    </div>
+    <div class="half right best-prices">
+        <p class="half left">
+            <span class="title">Best Sell: </span>
+            <span *ngIf="_LSCXmarket.state.orders.sells.length>0" class="red">{{_LSCXmarket.state.orders.sells[0].price}}</span>
+            <span *ngIf="_LSCXmarket.state.orders.sells.length==0">----</span>
+        </p>
+        <p class="half right">
+            <span class="black">Best Buy: </span>
+            <span *ngIf="_LSCXmarket.state.orders.buys.length>0" class="green">{{_LSCXmarket.state.orders.buys[0].price}}</span>
+            <span *ngIf="_LSCXmarket.state.orders.buys.length==0">----</span>
+        </p>
+    </div>
 </div>
-<form (ngSubmit)="onSubmit(form)" #form="ngForm" class="dist">
-    <div>
+<div class="clear"></div>
+
+<form (ngSubmit)="onSubmit(form)" #form="ngForm" class="clear dist">
+    <div class="dist">
         <div class="half left">
             <label class="title" for="amount">Amount to {{action}}</label>
             <div class="input-container" [ngClass]="{'error': submited  && (amount.invalid || eth.invalid)}">
-                <input type="number" [placeholder]="0.+('0').repeat(_market.token.decimal)" step="any" name="amount" (input)="total()" [(ngModel)]="f.amount" ngModel required #amount="ngModel" />
-                <span class="right">{{_market.token.name}}</span>
+                <input type="number" [placeholder]="0.+('0').repeat(_LSCXmarket.token.decimal)" step="any" name="amount" (input)="total()" [(ngModel)]="f.amount" ngModel required #amount="ngModel" />
+                <span class="right">{{_LSCXmarket.token.name}}</span>
             </div>
             <p class="error" [ngClass]="{'hidden':!(submited && (amount.invalid || eth.invalid))}">
                 <span *ngIf="amount.errors?.required">This field is required</span>
@@ -18,7 +34,7 @@
         <div class="half right">
             <label class="title" for="price">Price</label>
             <div class="input-container" [ngClass]="{'error': submited && (price.invalid || eth.invalid) }">
-                <input type="number" value="{{_market.lastPrice}}" step="any" name="price" (input)="total()" [(ngModel)]="f.price" ngModel required #price="ngModel" />
+                <input type="number" value="{{_LSCXmarket.lastPrice}}" step="any" name="price" (input)="total()" [(ngModel)]="f.price" ngModel required #price="ngModel" />
                 <span class="right">ETH</span>
             </div>
             <p class="error" [ngClass]="{'hidden':!(submited && (price.invalid || eth.invalid))}">

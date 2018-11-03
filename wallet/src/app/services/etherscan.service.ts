@@ -9,30 +9,39 @@ const shell = require('electron').shell;
 
 @Injectable()
 export class EtherscanService {
+	defaultApikey = "JDVE27WHYITCKM7Q2DMBC3N65VDIZ74HHJ"
 	apikey = "";
 	urlStarts = "";
 	checkInterval;
 	constructor(private _web3 : Web3, private http: Http){	
 		this.getApiKey();
 	}
+
 	setApiKey(apikey){
-		this.apikey = apikey;
-		let apikeys: any= {};
-		if(localStorage.getItem("apikeys")){
-		  apikeys = JSON.parse(localStorage.getItem("apikeys"));
-		}
-		  apikeys.eth = apikey;
-		  localStorage.setItem("apikeys",JSON.stringify(apikeys));
-	
+		if(apikey=="" || typeof(apikey)=="undefined") {
+			this.apikey = this.defaultApikey ;
+		}else {
+			this.apikey = apikey;
+			let apikeys: any= {};
+			if(localStorage.getItem("apikeys")){
+			apikeys = JSON.parse(localStorage.getItem("apikeys"));
+			}
+			apikeys.eth = apikey;
+			localStorage.setItem("apikeys",JSON.stringify(apikeys));
+		}	
 	}
+
 	getApiKey(){
 		if(localStorage.getItem("apikeys")){
 		  let apikeys : any = JSON.parse(localStorage.getItem("apikeys"));
 		  if("eth" in apikeys){
 			this.apikey  = apikeys.eth;
 		  }
+		}else{
+			this.apikey = this.defaultApikey
 		}
 	}
+
 	setUrlStarts(){
 		this.urlStarts = (this._web3.network.chain == 1)? "": "-"+this._web3.network.urlStarts;
 	}
@@ -55,13 +64,18 @@ export class EtherscanService {
 		
 		let history = historyResp.result;
 		let intHistory  = internalResp.result;
+		
 		for(let i =0; i<intHistory.length; i++){
 			history.push(intHistory[i]);
 		}
+		try {
+			history.sort((a,b)=>{
+				return a.timeStamp - b.timeStamp
+			});
+		}catch(e){
+			console.log(e);
+		}
 		
-		history.sort((a,b)=>{
-			return a.timeStamp - b.timeStamp
-		});
 		history = history.reverse();
 		
 		return history;
@@ -87,12 +101,20 @@ export class EtherscanService {
 		return this.http.get(url).map(res => res.json()).toPromise();
 	}
 
-	openTokenUrl(txHash, address){
+	openTokenHolderUrl(txHash, address){
 		let net = this.urlStarts.replace("-", "");
 		if(net!=""){
 			net = net+".";
 		}
     	shell.openExternal('https://'+net+'etherscan.io/token/'+txHash+'?a='+address);
+	}
+
+	openTokenUrl(tokenAdrr){
+		let net = this.urlStarts.replace("-", "");
+		if(net!=""){
+			net = net+".";
+		}
+    	shell.openExternal('https://'+net+'etherscan.io/token/'+tokenAdrr);
 	}
 	
 	async setVerified(_contractAddr, _sourceCode, _contractName, _compilerversion, _constructorArguments){

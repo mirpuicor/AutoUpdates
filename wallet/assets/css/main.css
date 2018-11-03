@@ -152,6 +152,10 @@ button {
     color: #3C4247;
 }
 
+.lightGrey {
+    color: #62676b;
+}
+
 .yellow {
     color: #ffc107;
 }
@@ -287,6 +291,13 @@ header>img {
     right: 30px;
 }
 
+.bottomL {
+    position: fixed;
+    bottom: 30px;
+    float: left;
+    /*left: 330px;*/
+}
+
 .main-content {
     flex-grow: 1;
     background-color: #f8f8f8;
@@ -353,6 +364,8 @@ nav a span {
     display: block;
     width: 100%;
 }
+
+
 /*-------------------- CONTENT ----------------------------*/
 
 .content {
@@ -387,21 +400,26 @@ nav a span {
 .info-list li {
     padding: 3px 0;
 }
+
 .prefix-select {
     width: 200px;
 }
+
 .flag {
     width: 20px;
     max-height: 15px;
     margin-right: 5px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
+
 .flag+span {
-   max-width: 100px;
+    max-width: 100px;
 }
+
 .prefix {
     width: 50px;
 }
+
 #flag-list {
     margin-top: -21px;
 }
@@ -484,6 +502,10 @@ nav a span {
     width: 95%;
 }
 
+.best-prices p {
+    margin-top: 30px;
+}
+
 
 /**************************** FORMS ****************************/
 
@@ -511,8 +533,7 @@ input[type="checkbox"] {
 input,
 div.input-container,
 .input,
-.whiteBox
-{
+.whiteBox {
     height: 44px;
 }
 
@@ -597,7 +618,8 @@ p.error {
 }
 
 .btn-solid,
-.btn-contract {
+.btn-contract,
+.btn-contract-black {
     background-color: #30D67F;
     color: #fff;
     border: 2px solid transparent;
@@ -620,18 +642,33 @@ p.error {
     background-color: #79f479;
 }
 
-.btn-black {
-    padding: 0 40px;
-    border-radius: 5px;
+.btn-black,
+.btn-contract-black {
     color: #272d33;
     border: 2px solid black;
     background-color: transparent;
     text-decoration: none;
-    font-family: "Lato-Bold";
-    font-size: 11pt;
 }
 
-.btn-black:hover {
+.btn-solid-black {
+    height: 44px;
+    padding: 0 40px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-family: "Lato-Bold";
+    font-size: 11pt;
+    color: #ffffff;
+    border: 2px solid transparent;
+    background-color: #000000;
+    text-decoration: none;
+}
+
+.btn-solid-black:hover {
+    background-color: #272d33;
+}
+
+.btn-black:hover,
+.btn-contract-black:hover {
     color: #fff;
     background-color: black;
 }
@@ -646,9 +683,11 @@ p.error {
 }
 
 .btn-contract,
-.btn-contract-delete {
+.btn-contract-delete,
+.btn-contract-black {
     padding: 5px;
     border-radius: 5px;
+    font-family: "Lato-Bold";
 }
 
 .extra {
@@ -694,7 +733,8 @@ p.error {
     position: relative;
 }
 
-.contract-list *, .text-overflow-ellipsis{
+.contract-list *,
+.text-overflow-ellipsis {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -712,7 +752,16 @@ p.error {
 }
 
 .contract-list-title {
+    margin-top: 3px;
+    font-family: "Lato-Bold";
     font-size: 14pt;
+}
+
+.contract-list-add-market {
+    margin-left: 49px;
+    font-family: "Lato-Bold";
+    margin-top: 12px;
+    margin-bottom: 20px;
 }
 
 .select-contract-icon {
@@ -747,6 +796,14 @@ p.error {
 .auto-h {
     position: fixed;
     bottom: 50px;
+    top: 220px;
+    left: 270px;
+    right: 15px;
+}
+
+.auto-h-sett {
+    position: fixed;
+    bottom: 100px;
     top: 220px;
     left: 270px;
     right: 15px;
@@ -1035,8 +1092,9 @@ td {
 
 .cardValues {
     width: 100%;
-    padding-bottom: 10px;
+    padding: 2rem;
     margin: 0 auto;
+    margin-bottom: 1rem;
 }
 
 .cardValues div span,
@@ -1052,7 +1110,8 @@ td {
 
 .cardValues button {
     margin-top: 15px !important;
-    margin-left: 15px !important;
+    margin-right: 15px !important;
+    float: right;
 }
 
 .cardValues small {
@@ -1076,6 +1135,7 @@ td {
 .expected {
     margin: 0;
     margin-top: -2rem;
+    background-color: transparent;
 }
 
 .terms {
@@ -1103,4 +1163,20 @@ topDist {
     width: 40%;
     margin-right: 9%;
     height: 100px;
+}
+
+.green-progress .mat-progress-bar-fill::after {
+    background-color: #30D67F !important;
+}
+
+.green-progress .mat-progress-bar-buffer {
+    background-color: #c0f2d8 !important;
+}
+
+.small {
+    font-size: 8pt;
+}
+
+#messageAlert {
+    margin-top: 30px;
 }

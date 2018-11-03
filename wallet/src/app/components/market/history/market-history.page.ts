@@ -2,9 +2,10 @@ import { Component, DoCheck } from '@angular/core'
 
 import { AccountService } from '../../../services/account.service';
 import { ContractService } from '../../../services/contract.service';
-import { MarketService } from '../../../services/market.service';
 import { DialogService } from '../../../services/dialog.service';
 import { Web3 } from '../../../services/web3.service';
+import { LSCXMarketService } from '../../../services/LSCX-market.service';
+import { Order } from '../../../models/order';
 
 
 @Component({
@@ -20,24 +21,28 @@ export class MarketHistoryPage implements DoCheck {
   loadingDialog;
   intervalLoops:number;
 
-  constructor(protected _account: AccountService, private _contract: ContractService, private _market: MarketService, private _dialog: DialogService, private _web3: Web3) {
+  constructor(protected _account: AccountService, private _contract: ContractService, private _LSCXmarket: LSCXMarketService, private _dialog: DialogService, private _web3: Web3) {
+    this._LSCXmarket.getTokenState();
     this.action = "myTrades";
     this.intervalLoops = 0;
     this.lastAction = "myTrades";
     this.getHistory(this.action);
-    this.currentState = this._market.state.myTrades;
-    this.currentToken = this._market.token.name; 
+    this.currentState = this._LSCXmarket.state.myTrades;
+    this.currentToken = this._LSCXmarket.token.name; 
   }
 
   async ngDoCheck() {
-    if(this.currentToken != this._market.token.name){
-      this.currentToken = this._market.token.name;
+    if(this.lastAction != this.action){
+      this.lastAction = this.action;
+    }
+    if(this.currentToken != this._LSCXmarket.token.name){
+      this.currentToken = this._LSCXmarket.token.name;
       Promise.resolve().then(() => { this.activeButton(this.action)});
     }
 
-    if(JSON.stringify(this.currentState) != JSON.stringify(this._market.state[this.action]) && this.lastAction == this.action) {
+    if(JSON.stringify(this.currentState) != JSON.stringify(this._LSCXmarket.state[this.action]) && this.lastAction == this.action) {
       this.lastAction = this.action;
-      this.currentState = this._market.state[this.action];
+      this.currentState = this._LSCXmarket.state[this.action];
       this.getHistory(this.action);
     }
   }
@@ -47,21 +52,13 @@ export class MarketHistoryPage implements DoCheck {
     this.intervalLoops = 0;
     let interval = setInterval(()=>{
       this.intervalLoops++;
-      if(this._market.state.initialState == true){
-        this.intervalLoops = 0;
-        this.getHistory(action);
-        this.action = action;
-        if (this.loadingDialog != null) {
+      this.getHistory(action);
+      this.action = action;
+      if (this.loadingDialog != null) {
           this.loadingDialog.close();
-        }
-        clearInterval(interval);
+          this.loadingDialog= null;
       }
-      if(this.intervalLoops>40){
-        if (this.loadingDialog != null) {
-          this.loadingDialog.close();
-          this.loadingDialog = null;
-        }
-      }
+      clearInterval(interval);
     },500)
   }
 
@@ -80,30 +77,42 @@ export class MarketHistoryPage implements DoCheck {
   }
 
   getMyTrades(): any[] {
-    let trades = this._market.state.myTrades;
+    let trades = this._LSCXmarket.state.myTrades.filter(x=> x.show);;
     return (typeof(trades) == 'undefined')? [] : trades;
   }
 
   getMyOrders(): any[] {
-    let marketOrders =  this._market.state.myOrders;
-    let buys = (typeof(marketOrders)=="undefined")? [] : marketOrders.buys;
-    let sells = (typeof(marketOrders)=="undefined")? [] : marketOrders.sells;
-    let orders = buys;
-    orders.concat(sells);
-    orders.sort((a,b)=>{
-      return a.price - b.price || a.amountGet - b.amountGet
+    console.log("entra en getOrders");
+    let orders =  this._LSCXmarket.state.myOrders.filter(x=> !x.deleted && x.show);
+    let myOrders: Order[] =[];
+    orders.map(order => {
+      myOrders.push(new Order(order, order.tokenDecimals));  
+    });
+    myOrders.sort((a,b)=>{
+      return a.price - b.price || parseInt(a.amountGet.toString()) -  parseInt(b.amountGet.toString());
     })
-    return orders;
+    return myOrders;
   }
 
   getMyFunds(): any[] {
-    let funds = this._market.state.myFunds;
+    let funds = this._LSCXmarket.state.myFunds.filter(fund=>fund.show);
     return (typeof(funds) == 'undefined')? [] : funds;
   }
 
   openExternal(txHash){
     const shell = require('electron').shell;
-    let net = (this._web3.network==1) ? "":"ropsten.";
+    let net : string;
+    switch(this._web3.network) {
+      case 1: 
+        net ="";
+        break;
+      case 3: 
+        net ="ropsten.";
+        break;
+      case 42: 
+        net ="";
+        break;
+    }
     shell.openExternal('https://'+net+'etherscan.io/tx/'+txHash);
 }
 }

@@ -1,4 +1,5 @@
 import { Web3 } from '../services/web3.service';
+import * as EthUtils from 'ethereumjs-util';
 import * as EthTx from 'ethereumjs-tx';
 import BigNumber from 'bignumber.js';
 
@@ -8,14 +9,15 @@ export class BaseRawTx {
     gas: number;
     amount: number;
 
-    constructor(to: String, amount: BigNumber, gasLimit: number, gasPrice:number,  network:any) {
+    constructor(to: String, amount: BigNumber, gasLimit: number, gasPrice:number,  networkObj:any) {
         let txParams: any = {
             gasPrice: "0x"+gasPrice.toString(16),
             gasLimit: gasLimit,
             to: to,
             value: "0x"+amount.toString(16),
-            chainId:network.chain
+            chainId:networkObj.chain
         }
+        console.log(txParams)
         this.tx = new EthTx(txParams);
         this.gas = gasPrice*gasLimit;
         this.cost = amount.plus(this.gas).toNumber();
@@ -28,29 +30,28 @@ export class BaseRawTx {
         console.log("web3 nonce", nonce) 
         //para ver ultimo nonce real
         let history = account.account.history.filter(x=> x.from.toLowerCase() == account.account.address);
-        let historyNonce =history[0].nonce;
-        console.log(history[0].nonce, historyNonce);
-        if(historyNonce>= nonce){
-            nonce = parseInt(historyNonce)+1;
-        }
-       /* if(account.pending.length > 0){
-            let pendingNonce = account.pending[account.pending.length-1].nonce;
-            console.log("pending nonce", nonce)
-            if(pendingNonce >=  nonce){   
-                nonce = pendingNonce+1;
+        if(history.length > 0) {
+            let historyNonce =history[0].nonce;
+            if(historyNonce>= nonce){
+                nonce = parseInt(historyNonce)+1;
             }
-        }*/
+        }
+
+        
         this.tx.nonce = nonce;
     }
     setTxData(data){
         this.tx.data = data;
     }
+    async getNonce(): Promise<number>{
+        return EthUtils.bufferToInt(this.tx.nonce);
+    }
 
 }
 
 export class RawTx extends BaseRawTx {
-    constructor(account: any, to: String, amount: BigNumber, gasLimit: number, gasPrice:number, network:any, data: string) {
-        super(to, amount, gasLimit, gasPrice, network);
+    constructor(account: any, to: String, amount: BigNumber, gasLimit: number, gasPrice:number, networkObj:any, data: string) {
+        super(to, amount, gasLimit, gasPrice, networkObj);
         super.setTxNonce(account).then();
         if(data!="") {
             super.setTxData(data);
@@ -58,8 +59,8 @@ export class RawTx extends BaseRawTx {
     }
 }
 export class RawTxIncrementedNonce extends BaseRawTx {
-    constructor(account: any, to: String, amount: BigNumber, gasLimit: number, gasPrice:number, network:any, data: string, nonceIncrement:number) {
-        super(to, amount, gasLimit, gasPrice, network);
+    constructor(account: any, to: String, amount: BigNumber, gasLimit: number, gasPrice:number, networkObj:any, data: string, nonceIncrement:number) {
+        super(to, amount, gasLimit, gasPrice, networkObj);
         this.setIncrementedNonce(account,nonceIncrement);
         super.setTxData(data);
     }
@@ -78,16 +79,16 @@ export class RawTxIncrementedNonce extends BaseRawTx {
 
 
 export class DeployRawTx extends BaseRawTx{
-    constructor(account: any, gasLimit: number, gasPrice:number, network:any, data:string) {
-        super("", new BigNumber(0), gasLimit, gasPrice, network);
+    constructor(account: any, gasLimit: number, gasPrice:number, networkObj:any, data:string) {
+        super("", new BigNumber(0), gasLimit, gasPrice, networkObj);
         super.setTxNonce(account).then();
         super.setTxData(data);
     }
 }
 
 export class ResendTx extends BaseRawTx{
-    constructor(account: any, to: String, amount: BigNumber, gasLimit: number, gasPrice:number, network:any, data: string, nonce:number) {
-        super(to, amount, gasLimit, gasPrice, network);
+    constructor(account: any, to: String, amount: BigNumber, gasLimit: number, gasPrice:number, networkObj:any, data: string, nonce:number) {
+        super(to, amount, gasLimit, gasPrice, networkObj);
         this.tx.nonce = nonce;
         if(data!="") {
             super.setTxData(data);

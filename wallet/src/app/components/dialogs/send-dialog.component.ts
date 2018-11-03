@@ -11,7 +11,6 @@ import { AccountService } from '../../services/account.service'
 
 import { LSCX_Contract } from '../../models/LSCX_contract';
 import { ContractStorageService } from '../../services/contractStorage.service';
-import { MarketService } from '../../services/market.service';
 
 import { AlternativeSending } from '../../models/alternativeSending';
 
@@ -28,8 +27,11 @@ export class SendDialogComponent{
   title = "";
   message = "";
   txs: any[];
+  submited = false;
 
-  constructor(public _web3: Web3, public _account: AccountService, private router: Router, public dialogService: DialogService, @Inject(MD_DIALOG_DATA) public data: any, public dialogRef: MdDialogRef<SendDialogComponent>, private _contractStorage: ContractStorageService, private _market: MarketService) {
+  constructor(public _web3: Web3, public _account: AccountService, private router: Router, public dialogService: DialogService, @Inject(MD_DIALOG_DATA) public data: any, public dialogRef: MdDialogRef<SendDialogComponent>, private _contractStorage: ContractStorageService) {
+    console.log("Que es this.data?",this.data);
+    
     if(parseInt(_web3.web3.toWei(this._account.account.balance,'ether')) < data.total ){
       this.insufficient= true;
     }
@@ -42,24 +44,26 @@ export class SendDialogComponent{
    
 
   async sendTx(pass){
-    if (typeof(pass)=='undefined' || pass==""){
+    if (typeof(pass)=='undefined' || pass=="" || this.submited){
       return false
     }
+    this.submited = true;
 
     if('seedOptions' in this.data) {
       let seedOptions = this.data.seedOptions
-      let alternativeSending =new AlternativeSending(seedOptions.seed, seedOptions.to, this._account.account.address, "hash", this.data.amount.toString(), this._web3.network);
-      console.log(alternativeSending);
+      let alternativeSending = new AlternativeSending(seedOptions.seed, seedOptions.to, this._account.account.address, "hash", this.data.amount.toString(), this._web3.network);
+      console.log("alternativeSending",alternativeSending);
       return false
     }
-
+    
+    
     let privateKey =  this.getPrivate(pass);
     if(privateKey == null) return false;
     
     for(let i=0; i<this.txs.length; i++){
       this.txs[i].sign(privateKey);
       
-      let serialized = "0x"+(this.txs[i].serialize()).toString('hex');
+      let serialized = "0x"+(this.txs[i].serialize()).toString('hex');      
       let sendResult = await this._web3.sendRawTx(serialized);
       this.dialogRef.close();
       
@@ -67,9 +71,6 @@ export class SendDialogComponent{
         this.openDialogWhenError(sendResult.message);
         return false;
       }else{      
-        if(this.data.action == "order") {
-          await this.sendMarketOrder(privateKey);
-        }
 
         let pending: any = null;
         let j = 0;
@@ -107,7 +108,7 @@ export class SendDialogComponent{
           }
           if(i==this.txs.length-1){
             this.title = "Your transaction has been sent";
-            this.message = "You can see the progress in the history tab"
+            this.message = "You can see the progress in the global tab"
             //self.dialogRef.close();
             let dialogRef = this.dialogService.openErrorDialog(this.title, this.message, this.error, this.data.action);
             dialogRef.afterClosed().subscribe(result=>{
@@ -122,7 +123,8 @@ export class SendDialogComponent{
   }
 
   closeDialog(){
-    this.dialogRef.close();
+    this.dialogRef.close(JSON.stringify({message: "Back"}));
+    
   }
 
   getPrivate(pass):string{
@@ -138,7 +140,7 @@ export class SendDialogComponent{
 
   addLSCXContract(hash) {
     let contract =  new LSCX_Contract();
-    contract.deployContract(hash, this.data.contract.info, this.data.contract.type, this._account.account.address, this._web3.network);
+    contract.deployContract(hash, this.data.contract.info, this.data.contract.type, this._account.account.address, this._web3.network.chain);
     this._contractStorage.addContract(contract);
     this._contractStorage.checkForAddress();
   }
@@ -154,13 +156,7 @@ export class SendDialogComponent{
   setErroParamsWhenNotConfiramtion(){
     this.title = "Unable to check transaction confirmation";
     this.message = "Something went wrong"
-    this.error = "We can not check network confirmation, You can see the progress in the history tab";
-  }
-
-  async sendMarketOrder(privateKey){
-    let hash = await this._market.orderHash(this.data.hashParams)
-    let sign = this._market.signOrder(hash, privateKey);
-    await this._market.placeOrder(this.data.hashParams, sign);
+    this.error = "We can not check network confirmation, You can see the progress in the global tab";
   }
 
   createPendingObject(hash, index){

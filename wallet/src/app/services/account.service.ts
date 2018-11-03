@@ -125,7 +125,7 @@ export class AccountService{
       let wallet = JSON.parse(localStorage.getItem('ethAcc'));
       let result = wallet.findIndex(x => x.address == this.account.address);
       if(wallet[result].hasOwnProperty('tokens')){
-        let tokens = wallet[result].tokens.filter(x=> x.network == this._web3.network)
+        let tokens = wallet[result].tokens.filter(x=> x.network == this._web3.network.chain)
         return tokens;
       }else{
         return [];
@@ -204,6 +204,9 @@ export class AccountService{
           deleted: false
         }
         token = await self.updateTokenBalance(token);
+        /*console.log("despues de tener el Balance");
+        console.log(isNaN(token.tokenDecimal));
+        console.log("despues del isNaN");*/
         if(!isNaN(token.tokenDecimal)){
             tokens.push(token);
         }
@@ -223,8 +226,9 @@ export class AccountService{
       }      
       let exp = 10 ** token.tokenDecimal;
       let balance : any = await this._token.getBalanceOf(this.account.address);
-      
+      //console.log("antes de poner el balance");
       token.balance = balance.div(exp).toNumber();
+      //console.log("despues de poner el balance");
     }
     
     return token
@@ -237,13 +241,13 @@ export class AccountService{
       let wallet = JSON.parse(localStorage.getItem('ethAcc'));
       let result = wallet.findIndex(x => x.address == this.account.address);
       if(wallet[result].hasOwnProperty('pending')){
-        this.pending= wallet[result].pending.filter(x=> x.network == this._web3.network);
+        this.pending= wallet[result].pending.filter(x=> x.network == this._web3.network.chain);
       }
     }
   }
   
   async addPendingTx(tx){
-    tx.network=this._web3.network;
+    tx.network=this._web3.network.chain;
     let pendings = this.pending.filter(x=> x.nonce != tx.nonce);
     pendings.push(tx);
     this.pending= pendings;

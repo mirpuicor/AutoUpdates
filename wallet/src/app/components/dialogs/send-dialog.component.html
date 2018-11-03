@@ -16,15 +16,19 @@
             <p *ngIf="data.action == 'transfer'">{{data.token}} {{data.tokenAmount}}</p>
         </div>
         <div class="flex1">
-            <p class="black">Fees</p>
-            <p>ETH {{(data.fees | converter:'fromWei':'ether') | number:'1.2-8':'en'}}</p>
+            <p class="black">Gas</p>
+            <p>ETH {{(data.gas | converter:'fromWei':'ether') | number:'1.2-8':'en'}}</p>
         </div>
         <div class="flex1">
             <p class="black">Total</p>
             <p>ETH {{(data.total | converter:'fromWei':'ether') | number:'1.2-8':'en'}}</p>
         </div>
     </div>
+    <p *ngIf="data.typeFunction == 'myTrades' || data.typeFunction == 'myOrders'" class="dist red">This action have a market fee of {{data.fees | number:'1.2-8':'en'}} {{data.tokenName}}</p>
 </div>
+
+
+
 <div *ngIf="insufficient" class="dist">
     <p class="error-founds input text-center dist">You don't have enough funds</p>
     <div class="buttons text-center">

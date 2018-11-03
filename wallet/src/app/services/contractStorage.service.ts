@@ -3,6 +3,10 @@ import { Web3 } from './web3.service';
 import { AccountService } from './account.service';
 import { EtherscanService } from './etherscan.service';
 import { Http, Headers, RequestOptions } from "@angular/http";
+import { LSCXMarketService } from './LSCX-market.service';
+import { MdDialog } from '@angular/material';
+import { TikerDialogComponent } from '../components/dialogs/tiker-dialog.component';
+import { flattenStyles } from '@angular/platform-browser/src/dom/dom_renderer';
 var fs = require('fs');
 
 @Injectable()
@@ -10,8 +14,9 @@ export class ContractStorageService {
     contracts: Array<any>;
     LSCX_Contracts: Array<any>;
     customContracts: Array<any>;
+    addDialog = null;
 
-    constructor(private _web3: Web3, private _account: AccountService, protected _scan : EtherscanService, protected http : Http){
+    constructor(private _web3: Web3, private _account: AccountService,private dialog: MdDialog, private _LSCXmarket: LSCXMarketService, protected _scan : EtherscanService, protected http : Http){
         this.setContracts();
         this.setAccContracts();
     }
@@ -25,8 +30,8 @@ export class ContractStorageService {
     }
 
     setAccContracts(){
-        this.LSCX_Contracts = this.contracts.filter(contract=> contract.account == this._account.account.address && contract.network == this._web3.network && contract.type != "custom");
-        this.customContracts = this.contracts.filter(contract=> contract.account == this._account.account.address && contract.network == this._web3.network && contract.type == "custom");
+        this.LSCX_Contracts = this.contracts.filter(contract=> contract.account == this._account.account.address && contract.network == this._web3.network.chain && contract.type != "custom");
+        this.customContracts = this.contracts.filter(contract=> contract.account == this._account.account.address && contract.network == this._web3.network.chain && contract.type == "custom");
     }
 
     deletContract(contract){
@@ -62,7 +67,6 @@ export class ContractStorageService {
             this.contracts.forEach((contract, index)=> {
                 if(contract.active==false){
                     pending.push(index);        
-
                 }
             })    
             if(pending.length==0){
@@ -73,91 +77,18 @@ export class ContractStorageService {
                 if(contractAddr!= null){                    
                     this.contracts[pending[i]].address = contractAddr;
                     this.contracts[pending[i]].active = true;
-
-                    let info = JSON.parse(localStorage.getItem("deployInfo"));
-                    
-                    let _compilerversion;
-                    let _contractName;
-                    let _sourceCode:string;
-
-                    if(info.contract == "LSCX_ABT"){
-                        _compilerversion = "v0.4.19+commit.c4cbbb05"
-                        _contractName = "Lescovex_ABT";
+                    if(this.addDialog == null) {
+                        this.openTikerDialog(this.contracts[pending[i]], true);
                     }
-                    if(info.contract == "LSCX_CIF"){
-                        _compilerversion = "v0.4.19+commit.c4cbbb05"
-                        _contractName = "Lescovex_CIF";
-                    }
-                    if(info.contract == "LSCX_CYC"){
-                        _compilerversion = "v0.4.24+commit.e67f0147"
-                        _contractName = "Lescovex_CYC";
-                    }
-                    if(info.contract == "LSCX_ISC"){
-                        _compilerversion = "v0.4.24+commit.e67f0147";
-                        _contractName = "Lescovex_ISC";
-                    }
-                    
-                    let self = this;
-                    
-                    await fs.readFile("./src/LSCX-contracts/"+info.contract+".sol", function(err, data) {
-                        if (err) {
-                            return console.log(err);
-                        }
-                        if (data) {
-                            var x = data.toString();
-                            _sourceCode = x;
-
-                            self._scan.setUrlStarts();
-                            let net = self._scan.urlStarts.replace("-", "");
-                            if(net!=""){
-                                net = net+".";
-                            }
-                            let url = "https://"+net+"etherscan.io/address/"+contractAddr;
-
-                            let headers = new Headers();
-                            headers.append('Content-Type', 'text/html');
-                            //console.log("start pause");
-                            setTimeout(function(){
-                                //do what you need here
-                                //console.log("paused 30 seconds");
-                                
-                                self.http.get(url,  {headers: headers}).subscribe((res:any) =>{
-                                    //console.log("response", res)
-                                    let x = res._body;
-                                    //console.log("responsebody", x);
-                                    
-                                    let len = x.length                        
-                                    let y = x.split("pre")[4];
-                                    //console.log("primersplit",y);
-                                    
-                                    let z = y.split(">")[1];
-                                    //console.log("segundosplit",z)
-                                    let a =z.split("<")[0];
-                                    //console.log("tercersplit",a);
-                                    
-                                    let _constructorArguments = a;
-                                    //console.log(_constructorArguments);
-                                    
-                                    self._scan.setVerified(contractAddr, _sourceCode, _contractName, _compilerversion, _constructorArguments)
-    
-                                }, err =>{
-                                    console.log(err);
-                                    
-                                });
-                            }, 120000);
-                            
-                            
-                        }
-                    });
-                    
-                
-                }
+                    await this.verifyContract(contractAddr)
+                }    
                 this.saveContracts();
             }
 
         },3000);
         
     }
+    
 
     saveContracts(){
         if(this.contracts == []) {
@@ -167,6 +98,90 @@ export class ContractStorageService {
         }
     }
 
-    activeContract(contract){}
+    async verifyContract(contractAddr){
+        let info = JSON.parse(localStorage.getItem("deployInfo"));
+        let _compilerversion;
+        let _contractName;
+        let _sourceCode:string;
+
+        if(info.contract == "LSCX_ABT"){
+            _compilerversion = "v0.4.19+commit.c4cbbb05"
+                        _contractName = "Lescovex_ABT";
+        }
+        if(info.contract == "LSCX_CIF"){
+            _compilerversion = "v0.4.19+commit.c4cbbb05"
+            _contractName = "Lescovex_CIF";
+        }
+        if(info.contract == "LSCX_CYC"){
+            _compilerversion = "v0.4.24+commit.e67f0147"
+            _contractName = "Lescovex_CYC";
+        }
+        if(info.contract == "LSCX_ISC"){
+            _compilerversion = "v0.4.24+commit.e67f0147";
+            _contractName = "Lescovex_ISC";
+        }
+                    
+        let self = this;
+                    
+        await fs.readFile("./src/LSCX-contracts/"+info.contract+".sol", function(err, data) {
+            if (err) {
+                return console.log(err);
+            }
+            if (data) {
+                var x = data.toString();
+                _sourceCode = x;
+                self._scan.setUrlStarts();
+                let net = self._scan.urlStarts.replace("-", "");
+                if(net!=""){
+                    net = net+".";
+                }
+                let url = "https://"+net+"etherscan.io/address/"+contractAddr;
+                let headers = new Headers();
+                headers.append('Content-Type', 'text/html');
+                //console.log("start pause");
+                setTimeout(function(){
+                    //do what you need here
+                    //console.log("paused 30 seconds");
+                
+                    self.http.get(url,  {headers: headers}).subscribe((res:any) =>{
+                        //console.log("response", res)
+                        let x = res._body;
+                        //console.log("responsebody", x);
+                        
+                        let len = x.length                        
+                        let y = x.split("pre")[4];
+                        //console.log("primersplit",y);
+                    
+                        let z = y.split(">")[1];
+                        //console.log("segundosplit",z)
+                        let a =z.split("<")[0];
+                        //console.log("tercersplit",a);
+
+                        let _constructorArguments = a;
+                        //console.log(_constructorArguments);
+        
+                        self._scan.setVerified(contractAddr, _sourceCode, _contractName, _compilerversion, _constructorArguments)
+                    }, err =>{
+                        console.log(err);               
+                    });
+                }, 120000);
+            }
+        });          
+    }
+
+    openTikerDialog(contract, deploy:boolean) {
+        this.addDialog = this.dialog.open(TikerDialogComponent,{
+            width: '660px',
+            height: '250px',
+            data: {
+                contract: contract,
+                fees: this._LSCXmarket.fees.feeMarket,
+                deploy: deploy
+            }
+          });
+        this.addDialog.afterClosed().subscribe(()=>{
+            this.addDialog = null;
+        });
+    }
 
 }

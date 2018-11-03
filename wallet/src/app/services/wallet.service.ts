@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 
 import * as EthWallet from 'ethereumjs-wallet'
 import * as EthUtil from 'ethereumjs-util';
-import { write, readFile } from 'fs';
 
 declare var require: any;
 
@@ -39,7 +38,7 @@ export class WalletService {
     let wallet;
     let self = this;
     try{
-        wallet = EthWallet.fromV3(json,pass);
+        wallet = EthWallet.fromV3(json,pass,true);
     }catch(e){
         error = true
         throw e;
@@ -79,13 +78,14 @@ export class WalletService {
   }
   
   addAccount(wallet, pass, name){
+    
     let acc = {
       v3 : wallet.toV3(pass),
       address :  wallet.getAddressString(),
       name : name
     }
-
     let fileName = wallet.getV3Filename();
+  
     try{
       this.writeAccountLocally(acc.v3, fileName)
     }catch(e){
@@ -99,10 +99,22 @@ export class WalletService {
   
     }else{
       let  acca= JSON.parse(localStorage.getItem('ethAcc'));
-      acca.push(acc);
-      localStorage.setItem('ethAcc',JSON.stringify(acca));
+      let err = "";
+      
+      for (let i = 0; i < acca.length; i++) {
+        if(acca[i].address == acc.address){
+          err = "This account already exists in your wallet";
+        }
+      }
+      if(err != ""){
+        throw new Error(err);  
+      }else{
+        acca.push(acc);
+        localStorage.setItem('ethAcc',JSON.stringify(acca));
+      }
+      
     }  
-    this.getWallet();//To refresh wallet
+    this.getWallet();
   }
 
   delete(addr):void{
@@ -135,9 +147,7 @@ export class WalletService {
     
     for(let i=0; i<files.length; i++){
       if(files[i].indexOf(v3.address)){
-      
         let data = fs.readFileSync(lescovexPath+"/"+files[i]);
-    
       }
     }
   }

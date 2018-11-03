@@ -65,6 +65,7 @@ export class LSCXContractService {
 		this.contractHist = history;
 		this.moreInfo= await this.getContractData(); 
 	}
+	
 	async callFunction(contractInst, functionName:string, params){
 		return await this._contract.callFunction(contractInst, functionName, params);
 	}
@@ -261,6 +262,7 @@ export class LSCXContractService {
 
 	async checkContract(cAddress:string){
 		let response : any = await this._scan.getTx(cAddress).toPromise();
+		console.log("checkContract",response)
 		if (response.status == 1){
 			let result = response.result[0];
       		if(typeof(result)!= 'undefined' && result.contractAddress.toLowerCase() == cAddress.toLowerCase()){
